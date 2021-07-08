@@ -140,6 +140,7 @@ def extract_xrefs(row) -> list[tuple[str, str, str]]:
             (
                 prefix,
                 bioregistry.get_name(prefix),
+                bioregistry.get_homepage(prefix),
                 identifier,
             )
         )
