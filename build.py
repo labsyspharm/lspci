@@ -96,7 +96,7 @@ def main():
     counter = 0
 
     dictionary_path = ensure(SYNAPSE_DICTIONARY_ID, SYNAPSE_DICTIONARY_NAME)
-    for chunk in pd.read_csv(dictionary_path, chunksize=25, dtype=str):
+    for chunk in pd.read_csv(dictionary_path, chunksize=5, dtype=str):
         print(chunk.head())
         counter += len(chunk.index)
         for _, row in chunk.iterrows():
