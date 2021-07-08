@@ -95,9 +95,9 @@ def main():
         for _, row in chunk.iterrows():
             compound_html = COMPOUND_TEMPLATE.render(row=row)
 
-            directory = DOCS.joinpath(str(row['lspci_id']))
+            directory = DOCS.joinpath(str(row["lspci_id"]))
             directory.mkdir(exist_ok=True, parents=True)
-            with directory.joinpath('index.html').open('w') as file:
+            with directory.joinpath("index.html").open("w") as file:
                 print(compound_html, file=file)
             break
         break
