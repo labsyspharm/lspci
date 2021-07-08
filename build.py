@@ -21,6 +21,7 @@ ENVIRONMENT = jinja2.Environment(
     autoescape=True, loader=jinja2.FileSystemLoader(TEMPLATES), trim_blocks=False
 )
 INDEX_TEMPLATE = ENVIRONMENT.get_template("index.html")
+ABOUT_TEMPLATE = ENVIRONMENT.get_template("about.html")
 COMPOUND_TEMPLATE = ENVIRONMENT.get_template("compound.html")
 
 #: The /docs folder in the root of the repository into which the formatted templates are dumped,
@@ -105,6 +106,10 @@ def main():
     index_html = INDEX_TEMPLATE.render(counter=counter)
     with DOCS.joinpath("index.html").open("w") as file:
         print(index_html, file=file)
+
+    about_html = ABOUT_TEMPLATE.render()
+    with DOCS.joinpath("about.html").open("w") as file:
+        print(about_html, file=file)
 
 
 if __name__ == "__main__":
