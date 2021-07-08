@@ -1,13 +1,59 @@
 {% extends "base.html" %}
 
-{% block title %}lspci:{{ row.lspci_id }}{% endblock %}
+{% block title %}lspci:{{ identifier }}{% endblock %}
 
 {% block content %}
     <div class="card" style="margin-bottom: 20px;">
         <div class="card-body">
+            <h5 class="card-title">{{ name }} <span class="badge badge-info">Max Phase: {{ row.max_phase }}</span></h5>
+            <h6 class="card-subtitle mb-2 text-muted">lspci:{{ row.lspci_id }}</h6>
+            <img alt="Depiction of molecule" src="https://cactus.nci.nih.gov/chemical/structure/{{ inchi }}/image">
             <p>
-                This page shows information for <code>lspci:{{ row.lspci_id }}</code>.
+                <code>{{ inchi }}</code>
             </p>
+            {% if xrefs %}
+                <h5 class="card-title">Cross References</h5>
+                <table class="table table-striped table-hover" id="table-terms">
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Prefix</th>
+                        <th>Identifier</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for xref_name, xref_prefix, xref_id in xrefs %}
+                        <tr>
+                            <td>{{ xref_name }}</td>
+                            <td>{{ xref_prefix }}</td>
+                            <td>
+                                <a class="card-link"
+                                   href="https://bioregistry.io/{{ xref_prefix }}:{{ xref_id }}">{{ xref_id }}</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% endif %}
+            {% if synonyms %}
+                <h5 class="card-title">Synonyms</h5>
+                <table class="table table-striped table-hover">
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Source</th>
+                        <th>Priority</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for source, priority, name in synonyms %}
+                        <tr>
+                            <td>{{ name }}</td>
+                            <td>{{ priority }}</td>
+                            <td>{{ source }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% endif %}
         </div>
     </div>
 {% endblock %}
