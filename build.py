@@ -1,9 +1,11 @@
 """Build the LSP Compound site."""
 
+from collections import defaultdict
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
+import bioregistry
 import click
 import jinja2
 import pandas as pd
@@ -21,6 +23,7 @@ ENVIRONMENT = jinja2.Environment(
     autoescape=True, loader=jinja2.FileSystemLoader(TEMPLATES), trim_blocks=False
 )
 INDEX_TEMPLATE = ENVIRONMENT.get_template("index.html")
+ABOUT_TEMPLATE = ENVIRONMENT.get_template("about.html")
 COMPOUND_TEMPLATE = ENVIRONMENT.get_template("compound.html")
 
 #: The /docs folder in the root of the repository into which the formatted templates are dumped,
@@ -82,29 +85,65 @@ def ensure(synapse_id: str, name: str, force: bool = False) -> Path:
 @verbose_option
 def main():
     """Build the LSP Compound website."""
-    # names_path = ensure(SYNAPSE_NAMES_ID, SYNAPSE_NAMES_NAME)
-    # for chunk in pd.read_csv(names_path, chunksize=300):
-    #     print(chunk.head())
-    #     break
+    names_path = ensure(SYNAPSE_NAMES_ID, SYNAPSE_NAMES_NAME)
+
+    synonyms = defaultdict(list)
+    for chunk in pd.read_csv(names_path, chunksize=300, dtype=str):
+        for lspci_id, sdf in chunk.groupby("lspci_id"):
+            synonyms[lspci_id].extend(sdf[["source", "priority", "name"]].values)
+        break
 
     counter = 0
 
     dictionary_path = ensure(SYNAPSE_DICTIONARY_ID, SYNAPSE_DICTIONARY_NAME)
-    for chunk in pd.read_csv(dictionary_path, chunksize=300):
+    for chunk in pd.read_csv(dictionary_path, chunksize=5, dtype=str):
+        print(chunk.head())
         counter += len(chunk.index)
         for _, row in chunk.iterrows():
-            compound_html = COMPOUND_TEMPLATE.render(row=row)
-
+            row = clean(row)
+            identifier = row["lspci_id"]
+            compound_html = COMPOUND_TEMPLATE.render(
+                identifier=identifier,
+                name=row.get("pref_name", identifier),
+                inchi=row["inchi"],
+                xrefs=extract_xrefs(row),
+                row=row,
+                synonyms=synonyms.get(identifier),
+            )
             directory = DOCS.joinpath(str(row["lspci_id"]))
             directory.mkdir(exist_ok=True, parents=True)
             with directory.joinpath("index.html").open("w") as file:
                 print(compound_html, file=file)
-            break
         break
 
     index_html = INDEX_TEMPLATE.render(counter=counter)
     with DOCS.joinpath("index.html").open("w") as file:
         print(index_html, file=file)
+
+    about_html = ABOUT_TEMPLATE.render()
+    with DOCS.joinpath("about.html").open("w") as file:
+        print(about_html, file=file)
+
+
+def clean(d):
+    return {k: v for k, v in d.items() if pd.notna(v)}
+
+
+def extract_xrefs(row) -> list[tuple[str, str, str]]:
+    rows = []
+    for key in ["hmsl_id", "chembl_id", "emolecules_id"]:
+        if key not in row or pd.isna(row[key]):
+            continue
+        identifier = row[key]
+        prefix = key.removesuffix("_id")
+        rows.append(
+            (
+                prefix,
+                bioregistry.get_name(prefix),
+                identifier,
+            )
+        )
+    return rows
 
 
 if __name__ == "__main__":
